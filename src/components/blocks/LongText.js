@@ -5,10 +5,11 @@ export default function LongText({ settings, onChange, onNext, designSettings })
   return (
     <div className="w-full space-y-2 p-4 flex justify-center item-center">
       <div className="w-full mx-20 my-20">
-        <label className="text-gray-800 font-medium text-sm mb-6">
-          {settings.label}
-          {settings.required && <span className="text-red-500"> *</span>}
-        </label>
+       <h2 className="text-3xl font-semibold text-gray-800 mt-5mb-5">{settings.title}</h2>
+        <div
+                        className=" text-gray-600 text-sm mb-5 mt-5"
+                        dangerouslySetInnerHTML={{ __html: settings.description }}
+                    ></div>
 
         <div className="mt-5">
           <textarea

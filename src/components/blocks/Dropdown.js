@@ -4,10 +4,11 @@ import React from "react";
 export default function Dropdown({ settings, onChange, onNext, designSettings }) {
   return (
     <div className="space-y-2">
-      <label className="text-gray-800 font-medium text-sm">
-        {settings.label}
-        {settings.required && <span className="text-red-500"> *</span>}
-      </label>
+      <h2 className="text-3xl font-semibold text-gray-800 mt-5mb-5">{settings.title}</h2>
+        <div
+                        className=" text-gray-600 text-sm mb-5 mt-5"
+                        dangerouslySetInnerHTML={{ __html: settings.description }}
+                    ></div>
 
       <select
         className="w-full border border-gray-300 p-3 rounded-md bg-white focus:ring-2 focus:ring-blue-200 outline-none"

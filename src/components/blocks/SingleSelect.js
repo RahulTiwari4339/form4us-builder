@@ -11,8 +11,11 @@ export default function SingleSelect({ settings = {}, onNext = () => {}, designS
         backgroundSize: "cover",
       }}
     >
-      <h2 className="text-3xl font-semibold mb-4" style={{ color: textColor }}>{settings.title}</h2>
-      <div className="flex flex-col gap-3">
+<h2 className="text-3xl font-semibold text-gray-800 mt-5mb-5">{settings.title}</h2>
+        <div
+                        className=" text-gray-600 text-sm mb-5 mt-5"
+                        dangerouslySetInnerHTML={{ __html: settings.description }}
+                    ></div>      <div className="flex flex-col gap-3">
         {settings.options?.map((opt, i) => (
           <button key={i} className="px-6 py-2 rounded border bg-white shadow-sm">{opt}</button>
         ))}

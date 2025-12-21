@@ -4,9 +4,11 @@ export default function PhoneInput({ settings, onNext , designSettings}) {
       <div className="flex flex-col items-center gap-6 w-full max-w-sm">
 
         {/* Title */}
-        <h2 className="text-2xl font-semibold text-gray-800 text-center">
-          {settings.label}
-        </h2>
+        <h2 className="text-3xl font-semibold text-gray-800 mt-5mb-5">{settings.title}</h2>
+        <div
+                        className=" text-gray-600 text-sm mb-5 mt-5"
+                        dangerouslySetInnerHTML={{ __html: settings.description }}
+                    ></div>
 
         {/* Phone Field */}
         <div className="flex items-center gap-3 border-b pb-2 w-full">

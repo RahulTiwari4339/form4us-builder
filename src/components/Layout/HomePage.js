@@ -116,9 +116,14 @@ export default function HomePage({ role, userSession }) {
 
   const handleCreateForm = async (templateId = null) => {
     try {
+      if(templateId) {
+        startTransition(() => {
+          router.push(`/forms/${templateId}/build`);
+        });
+        return;
+      }
       const response = await axios.post("/api/forms/create", {
-        title: templateId ? "Form from Template" : "My Form",
-        templateId: templateId,
+        title: "My Form",
       });
 
       if (response.data.success) {

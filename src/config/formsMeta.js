@@ -44,13 +44,16 @@ export const FORM_META = {
     color: "bg-[#D5C7ED]",
     component: ShortText,
     default: {
-       title: "Your answer",
+      title: "Your answer",
       description: "Type here....",
       required: false
     },
     settingsFields: [
-      { key: "label", type: "text", label: "Label" },
+            { key: "title", type: "text", label: "Title" },
+            { key: "description", type: "richtext", label: "Description" },
+
       { key: "placeholder", type: "text", label: "Placeholder" },
+
       { key: "required", type: "checkbox", label: "Required?" },
       { key: "nextText", type: "text", label: "Next Button Text" }
     ]
@@ -62,10 +65,14 @@ export const FORM_META = {
     component: SingleSelect,
     default: {
       title: "Which do you prefer? 👇",
+       description: "",
+
       options: ["Option 1", "Option 2"]
     },
     settingsFields: [
       { key: "title", type: "text", label: "Title" },
+            { key: "description", type: "richtext", label: "Description" },
+
       { key: "options", type: "list", label: "Options" },
       { key: "nextText", type: "text", label: "Next Button Text" }
     ]
@@ -78,11 +85,14 @@ export const FORM_META = {
     component: LongText,
     default: {
       title: "Your message",
+      description: "",
       placeholder: "Write details here...",
       required: false
     },
     settingsFields: [
-      { key: "label", type: "text", label: "Label" },
+      { key: "title", type: "text", label: "Title" },
+            { key: "description", type: "richtext", label: "Description" },
+
       { key: "placeholder", type: "text", label: "Placeholder" },
       { key: "required", type: "checkbox", label: "Required?" },
       { key: "nextText", type: "text", label: "Next Button Text" }
@@ -96,11 +106,15 @@ export const FORM_META = {
     component: NumberField,
     default: {
       title: "Enter a number",
+      description: "",
+
       placeholder: "1234",
       required: false
     },
     settingsFields: [
-      { key: "label", type: "text", label: "Label" },
+      { key: "title", type: "text", label: "Title" },
+            { key: "description", type: "richtext", label: "Description" },
+
       { key: "placeholder", type: "text", label: "Placeholder" },
       { key: "required", type: "checkbox", label: "Required?" },
       { key: "nextText", type: "text", label: "Next Button Text" }
@@ -114,11 +128,15 @@ export const FORM_META = {
     component: WebsiteUrl,
     default: {
       title: "Website URL",
+      description: "",
+
       placeholder: "https://example.com",
       required: false
     },
     settingsFields: [
-      { key: "label", type: "text", label: "Label" },
+      { key: "title", type: "text", label: "Title" },
+            { key: "description", type: "richtext", label: "Description" },
+
       { key: "placeholder", type: "text", label: "Placeholder" },
       { key: "required", type: "checkbox", label: "Required?" },
       { key: "nextText", type: "text", label: "Next Button Text" }
@@ -132,12 +150,16 @@ export const FORM_META = {
     component: PhoneInput,
     default: {
       title: "Phone Number",
+      description: "",
+
       placeholder: "Enter phone number",
       countryCode: "+1",
       required: false
     },
     settingsFields: [
       { key: "label", type: "text", label: "Label" },
+            { key: "description", type: "richtext", label: "Description" },
+
       { key: "placeholder", type: "text", label: "Placeholder" },
       { key: "countryCode", type: "text", label: "Country Code" },
       { key: "required", type: "checkbox", label: "Required?" },
@@ -152,10 +174,14 @@ export const FORM_META = {
     component: DateField,
     default: {
       title: "Select a date",
+      description: "",
+
       required: false
     },
     settingsFields: [
-      { key: "label", type: "text", label: "Label" },
+      { key: "title", type: "text", label: "Title" },
+            { key: "description", type: "richtext", label: "Description" },
+
       { key: "required", type: "checkbox", label: "Required?" },
       { key: "nextText", type: "text", label: "Next Button Text" }
     ]
@@ -167,10 +193,14 @@ export const FORM_META = {
     color: "bg-amber-200",
     component: StarRating,
     default: {
-      title: "Rate your experience ⭐"
+      title: "Rate your experience ⭐",
+      description: ""
+
     },
     settingsFields: [
-      { key: "label", type: "text", label: "Label" },
+      { key: "title", type: "text", label: "Title" },
+            { key: "description", type: "richtext", label: "Description" },
+
       { key: "nextText", type: "text", label: "Next Button Text" }
     ]
   },
@@ -182,11 +212,14 @@ export const FORM_META = {
     component: Dropdown,
     default: {
       title: "Choose an option",
+      description: "",
       options: ["Option 1", "Option 2"],
       required: false
     },
     settingsFields: [
-      { key: "label", type: "text", label: "Label" },
+      { key: "title", type: "text", label: "Title" },
+            { key: "description", type: "richtext", label: "Description" },
+
       { key: "options", type: "list", label: "Options" },
       { key: "required", type: "checkbox", label: "Required?" },
       { key: "nextText", type: "text", label: "Next Button Text" }
@@ -253,6 +286,7 @@ export const FORM_META = {
     component: ThankYou,
     default: {
       title: "Thank you!",
+
       description: "Form submitted successfully 🎉"
     },
     settingsFields: [

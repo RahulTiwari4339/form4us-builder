@@ -4,10 +4,11 @@ import React from "react";
 export default function PhoneNumber({ settings, onChange, onNext, designSettings }) {
   return (
     <div className="space-y-2">
-      <label className="text-gray-800 font-medium text-sm">
-        {settings.label}
-        {settings.required && <span className="text-red-500"> *</span>}
-      </label>
+     <h2 className="text-3xl font-semibold text-gray-800 mt-5mb-5">{settings.title}</h2>
+        <div
+                        className=" text-gray-600 text-sm mb-5 mt-5"
+                        dangerouslySetInnerHTML={{ __html: settings.description }}
+                    ></div>
 
       <div className="flex gap-2">
         <input
