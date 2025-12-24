@@ -98,6 +98,53 @@ export default function SettingsPanel({ step, updateSettings }) {
           </div>
         );
 
+
+        case "select":
+  return (
+    <div className="mt-3" key={field.key}>
+      <label className="text-sm font-medium">{field.label}</label>
+      <select
+        className="w-full border p-2 rounded mt-1"
+        value={value}
+        onChange={(e) => change(field.key, e.target.value)}
+      >
+        {field.options.map(opt => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
+  case "radio":
+  if (step.settings.mode !== "quiz") return null;
+
+  return (
+    <div className="mt-4" key={field.key}>
+      <label className="text-sm font-semibold">
+        Correct Answer
+      </label>
+
+      <div className="mt-2 space-y-2">
+        {(step.settings.options || []).map((opt, index) => (
+          <label
+            key={index}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <input
+              type="radio"
+              checked={value === index}
+              onChange={() => change(field.key, index)}
+            />
+            <span>{opt}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+
+
       /* -------------------
          RICH TEXT
       ------------------- */

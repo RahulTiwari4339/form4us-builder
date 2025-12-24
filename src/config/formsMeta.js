@@ -58,26 +58,43 @@ export const FORM_META = {
       { key: "nextText", type: "text", label: "Next Button Text" }
     ]
   },
-   select: {
-    label: "Single Select",
-    icon: "Check",
-    color: "bg-[#7BF1A8]",
-    component: SingleSelect,
-    default: {
-      title: "Which do you prefer? 👇",
-       description: "",
-
-      options: ["Option 1", "Option 2"]
-    },
-    settingsFields: [
-      { key: "title", type: "text", label: "Title" },
-            { key: "description", type: "richtext", label: "Description" },
-
-      { key: "options", type: "list", label: "Options" },
-      { key: "nextText", type: "text", label: "Next Button Text" }
-    ]
+select: {
+  label: "Single Select",
+  icon: "Check",
+  color: "bg-[#7BF1A8]",
+  component: SingleSelect,
+  default: {
+    title: "Question?",
+    description: "",
+    options: ["Option 1", "Option 2", "Option 3", "Option 4"],
+    mode: "select", // 👈 NEW ("select" | "quiz")
+    correctAnswer: null // 👈 index (number)
   },
+  settingsFields: [
+    { key: "title", type: "text", label: "Title" },
+    { key: "description", type: "richtext", label: "Description" },
+    { key: "options", type: "list", label: "Options" },
 
+    {
+      key: "mode",
+      type: "select",
+      label: "Question Mode",
+      options: [
+        { label: "Normal Select", value: "select" },
+        { label: "Quiz (Correct Answer)", value: "quiz" }
+      ]
+    },
+
+    {
+      key: "correctAnswer",
+      type: "radio",
+      label: "Correct Answer (Quiz Only)"
+    },
+
+    { key: "nextText", type: "text", label: "Next Button Text" }
+  ]
+}
+,
   longText: {
     label: "Long Text",
     icon: "AlignLeft",

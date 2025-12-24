@@ -13,6 +13,8 @@ export default function FormPage() {
   const [loading, setLoading] = useState(true);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [fadeIn, setFadeIn] = useState(true);
+  const [finalScore, setFinalScore] = useState(null);
+
 
   // Signature Canvas
   const canvasRef = useRef(null);
@@ -73,122 +75,109 @@ export default function FormPage() {
   };
 
   // ✅ Handle Next with validation
-  const handleNext = async (e) => {
-    e.preventDefault();
-    const currentStep = form.steps[currentStepIndex];
+  const handleNext = async (e, overrideAnswer = null) => {
+  e?.preventDefault();
 
-    // Validate required fields for contact form
-    if (currentStep?.type === "contact") {
-      const fields = currentStep?.settings?.fields || [];
-      for (const field of fields) {
-        if (field.required && !formData[field.key]) {
-          alert(`${field.label} is required`);
-          return;
-        }
-      }
-    }
+  const currentStep = form.steps[currentStepIndex];
 
-    // Validate required fields for address
-    if (currentStep?.type === "address") {
-      const fields = currentStep?.settings?.fields || [];
-      for (const field of fields) {
-        if (field.required && !formData[field.key]) {
-          alert(`${field.label} is required`);
-          return;
-        }
-      }
-    }
+  // ✅ Merge latest answer (prevents race condition)
+  const effectiveFormData = overrideAnswer
+    ? { ...formData, ...overrideAnswer }
+    : formData;
 
-    // Validate phoneNumber step
-    if (currentStep?.type === "phoneNumber" && currentStep?.settings?.required) {
-      if (!formData[currentStep.key]) {
-        alert("Phone number is required");
+  /* ================= VALIDATIONS ================= */
+
+  if (currentStep?.type === "contact") {
+    for (const field of currentStep.settings?.fields || []) {
+      if (field.required && !effectiveFormData[field.key]) {
+        alert(`${field.label} is required`);
         return;
       }
     }
+  }
 
-    // Validate websiteurl step
-    if (currentStep?.type === "websiteurl" && currentStep?.settings?.required) {
-      if (!formData[currentStep.key]) {
-        alert("Website URL is required");
+  if (currentStep?.type === "address") {
+    for (const field of currentStep.settings?.fields || []) {
+      if (field.required && !effectiveFormData[field.key]) {
+        alert(`${field.label} is required`);
         return;
       }
     }
+  }
 
-    // Validate number step
-    if (currentStep?.type === "number" && currentStep?.settings?.required) {
-      if (!formData[currentStep.key]) {
-        alert("This field is required");
-        return;
+  if (
+    ["phoneNumber", "websiteurl", "number", "longText", "date", "dropdown"].includes(
+      currentStep?.type
+    ) &&
+    currentStep?.settings?.required &&
+    !effectiveFormData[currentStep.key]
+  ) {
+    alert("This field is required");
+    return;
+  }
+
+  /* ================= NAVIGATION ================= */
+
+  const nextStepIndex = currentStepIndex + 1;
+  const nextStep = form.steps[nextStepIndex];
+
+  /* ================= SUBMIT ================= */
+
+  if (nextStep?.type === "thankyou") {
+    // 🎯 QUIZ SCORE CALCULATION
+    const quizSteps = form.steps.filter(
+      (s) => s.type === "select" && s.settings.mode === "quiz"
+    );
+
+    let correct = 0;
+    quizSteps.forEach((step) => {
+      if (effectiveFormData[step.key]?.isCorrect === true) {
+        correct++;
       }
-    }
+    });
 
-    // Validate longText step
-    if (currentStep?.type === "longText" && currentStep?.settings?.required) {
-      if (!formData[currentStep.key]) {
-        alert("This field is required");
-        return;
-      }
-    }
+    const quizScore = {
+      total: quizSteps.length,
+      correct,
+      percentage: quizSteps.length
+        ? Math.round((correct / quizSteps.length) * 100)
+        : 0,
+    };
 
-    // Validate date step
-    if (currentStep?.type === "date" && currentStep?.settings?.required) {
-      if (!formData[currentStep.key]) {
-        alert("Please select a date");
-        return;
-      }
-    }
-
-    // Validate dropdown step
-    if (currentStep?.type === "dropdown" && currentStep?.settings?.required) {
-      if (!formData[currentStep.key]) {
-        alert("Please select an option");
-        return;
-      }
-    }
-
-    const nextStepIndex = currentStepIndex + 1;
-    const nextStep = form.steps[nextStepIndex];
-
-    // Check if we're moving to thank you page - submit form
-    if (nextStep?.type === "thankyou") {
-      // Capture signature before submitting if canvas exists
-      if (canvasRef.current) {
-        const signatureImage = canvasRef.current.toDataURL("image/png");
-        formData.signatureImage = signatureImage;
-      }
-
-      try {
-        const filteredData = { ...formData };
-        delete filteredData.signatureCanvasRef;
-
-        const submissionData = {
+    try {
+      const res = await fetch("/api/responses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           formId,
           formTitle: form.title,
-          responses: filteredData,
-        };
+          responses: effectiveFormData,
+          quizScore,
+        }),
+      });
 
-        const res = await fetch("/api/responses", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(submissionData),
-        });
-
-        if (res.ok) {
-          // Always move to thank you page after successful submission
-          setCurrentStepIndex(nextStepIndex);
-        } else {
-          alert("Failed to submit form.");
-        }
-      } catch (error) {
-        console.error("Submission error:", error);
-        alert("Error submitting form.");
+      if (!res.ok) {
+        alert("Submission failed");
+        return;
       }
-    } else if (nextStepIndex < form.steps.length) {
-      // Just move to next step if not at the end
+
+      setFormData(effectiveFormData);
+      setFinalScore(quizScore);
       setCurrentStepIndex(nextStepIndex);
+      return;
+    } catch (err) {
+      console.error(err);
+      alert("Submission error");
+      return;
     }
-  };
+  }
+
+  /* ================= NORMAL NEXT ================= */
+
+  setFormData(effectiveFormData);
+  setCurrentStepIndex(nextStepIndex);
+};
+
 
   const handlePrev = (e) => {
     e.preventDefault();
@@ -356,50 +345,63 @@ export default function FormPage() {
 
           {/* SELECT STEP */}
           {currentStep?.type === "select" && (
-            <div className="space-y-8">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 text-blue-600 font-medium mb-4">
-                  <span className="text-2xl">{currentQuestionNumber}</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
-                  {currentStep?.settings?.title || "Please select an option"}
-                </h2>
-              </div>
+  <div className="space-y-8">
+    <div className="space-y-2">
+      <div className="flex items-center gap-3 text-blue-600 font-medium mb-4">
+        <span className="text-2xl">{currentQuestionNumber}</span>
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
 
-              <div className="space-y-3">
-                {currentStep?.settings?.options?.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      handleChange(currentStep.key, option);
-                      setTimeout(() => handleNext({ preventDefault: () => {} }), 300);
-                    }}
-                    className={`w-full text-left px-6 py-4 rounded-xl border-2 transition-all hover:scale-102 ${
-                      formData[currentStep.key] === option
-                        ? "border-blue-600 bg-blue-50 text-blue-900"
-                        : "border-gray-300 hover:border-blue-400 bg-white"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xl font-medium">{option}</span>
-                      {formData[currentStep.key] === option && (
-                        <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+      <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+        {currentStep.settings.title}
+      </h2>
+    </div>
+
+    <div className="space-y-3">
+      {currentStep.settings.options.map((option, index) => (
+        <button
+          key={index}
+          onClick={() => {
+  const isQuiz = currentStep.settings.mode === "quiz";
+
+  const overrideAnswer = isQuiz
+    ? {
+        [currentStep.key]: {
+          selectedIndex: index,
+          selectedText: option,
+          correctIndex: currentStep.settings.correctAnswer,
+          isCorrect: index === currentStep.settings.correctAnswer
+        }
+      }
+    : {
+        [currentStep.key]: option
+      };
+
+  // ✅ DIRECTLY PASS ANSWER
+  handleNext(
+    { preventDefault: () => {} },
+    overrideAnswer
+  );
+}}
+
+          className={`w-full text-left px-6 py-4 rounded-xl border-2 transition-all
+            ${
+              formData[currentStep.key]?.selectedText === option ||
+              formData[currentStep.key] === option
+                ? "border-blue-600 bg-blue-50"
+                : "border-gray-300 bg-white hover:border-blue-400"
+            }
+          `}
+        >
+          <span className="text-xl font-medium">{option}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+)}
+
 
           {/* LONG TEXT STEP */}
           {currentStep?.type === "longText" && (
