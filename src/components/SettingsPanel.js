@@ -8,9 +8,9 @@ import {
   EyeOff,
   Eye,
   Trash2,
-  ChevronDown,
   ChevronUp
 } from "lucide-react";
+import { uploadImage } from "@/utlis/uploadImage";
 
 export default function SettingsPanel({ step, updateSettings }) {
   const [expandedField, setExpandedField] = useState(null);
@@ -19,47 +19,46 @@ export default function SettingsPanel({ step, updateSettings }) {
   if (!step) return null;
 
   const meta = FORM_META[step.type];
-  if (!meta || !meta.settingsFields) return <p>No settings available</p>;
+  if (!meta || !meta.settingsFields) return null;
 
   const change = (key, value) => {
     updateSettings(key, value);
   };
 
-  /* -----------------------------------------------------
-        FIELD RENDERER → reusable for all input types
-  ------------------------------------------------------ */
+  /* =====================================================
+      FIELD RENDERER (TYPEFORM STYLE)
+  ===================================================== */
   const renderField = (field) => {
     const value = step.settings[field.key];
 
     switch (field.type) {
-      /* -------------------
-           TEXT INPUT
-      ------------------- */
-      
+      /* ---------------- TEXT ---------------- */
       case "text":
         return (
-          <div className="mt-3" key={field.key}>
-            <label className="text-sm font-medium text-gray-600">
+          <div key={field.key} className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
               {field.label}
             </label>
             <input
               value={value || ""}
-              className="w-full p-2 border border-gray-200 rounded mt-1"
+              placeholder="Type here…"
               onChange={(e) => change(field.key, e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200
+                         bg-white text-sm focus:ring-2 focus:ring-blue-500"
             />
           </div>
         );
 
-      /* -------------------
-         CHECKBOX
-      ------------------- */
+      /* ---------------- CHECKBOX ---------------- */
       case "checkbox":
         return (
           <div
-            className="mt-3 flex justify-between items-center"
             key={field.key}
+            className="flex items-center justify-between bg-white border rounded-xl px-4 py-3"
           >
-            <label className="text-sm font-medium">{field.label}</label>
+            <span className="text-sm font-medium text-gray-700">
+              {field.label}
+            </span>
             <input
               type="checkbox"
               checked={!!value}
@@ -68,92 +67,177 @@ export default function SettingsPanel({ step, updateSettings }) {
           </div>
         );
 
-      /* -------------------
-         LIST OPTIONS
-      ------------------- */
+      /* ---------------- SELECT ---------------- */
+      case "select":
+        return (
+          <div key={field.key} className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              {field.label}
+            </label>
+            <select
+              value={value}
+              onChange={(e) => change(field.key, e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200
+                         bg-white text-sm focus:ring-2 focus:ring-blue-500"
+            >
+              {field.options.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        );
+
+      /* ---------------- OPTIONS LIST ---------------- */
       case "list":
         return (
-          <div className="mt-3" key={field.key}>
-            <label className="text-sm font-medium">{field.label}</label>
+          <div key={field.key} className="space-y-3">
+            <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              {field.label}
+            </label>
 
-            {(value || []).map((opt, index) => (
-              <input
-                key={index}
-                className="w-full border p-2 rounded mt-1"
-                value={opt}
-                onChange={(e) => {
-                  const copy = [...value];
-                  copy[index] = e.target.value;
-                  change(field.key, copy);
-                }}
-              />
-            ))}
+            <div className="space-y-2">
+              {(value || []).map((opt, index) => {
+                const option =
+                  typeof opt === "string"
+                    ? { label: opt, image: "" }
+                    : opt;
+
+                return (
+                  <div
+                    key={index}
+                    className="group flex items-center gap-3 p-3 rounded-xl
+                               border bg-white hover:border-blue-400 transition"
+                  >
+                    {/* IMAGE */}
+                    <label className="cursor-pointer">
+                      <div className="w-14 h-14 rounded-lg border bg-gray-100 overflow-hidden flex items-center justify-center">
+                        {option.image ? (
+                          <img
+                            src={option.image}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-400">
+                            Image
+                          </span>
+                        )}
+                      </div>
+
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          const imageUrl = await uploadImage(file);
+                          const copy = [...value];
+                          copy[index] = { ...option, image: imageUrl };
+                          change(field.key, copy);
+                        }}
+                      />
+                    </label>
+
+                    {/* TEXT */}
+                    <input
+                      value={option.label}
+                      placeholder={`Option ${index + 1}`}
+                      onChange={(e) => {
+                        const copy = [...value];
+                        copy[index] = {
+                          ...option,
+                          label: e.target.value
+                        };
+                        change(field.key, copy);
+                      }}
+                      className="flex-1 px-4 py-2 rounded-lg border border-gray-200
+                                 text-sm focus:ring-2 focus:ring-blue-500"
+                    />
+
+                    {/* DELETE */}
+                    <button
+                      onClick={() => {
+                        const copy = value.filter((_, i) => i !== index);
+                        change(field.key, copy);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition
+                                 text-gray-400 hover:text-red-500"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
 
             <button
-              className="text-blue-500 text-xs mt-2"
-              onClick={() => change(field.key, [...(value || []), "New Option"])}
+              onClick={() =>
+                change(field.key, [
+                  ...(value || []),
+                  { label: "", image: "" }
+                ])
+              }
+              className="text-sm font-medium text-blue-600 hover:text-blue-700"
             >
-              + Add Option
+              + Add option
             </button>
           </div>
         );
 
+      /* ---------------- QUIZ CORRECT ANSWER ---------------- */
+      case "radio":
+        if (step.settings.mode !== "quiz") return null;
 
-        case "select":
-  return (
-    <div className="mt-3" key={field.key}>
-      <label className="text-sm font-medium">{field.label}</label>
-      <select
-        className="w-full border p-2 rounded mt-1"
-        value={value}
-        onChange={(e) => change(field.key, e.target.value)}
-      >
-        {field.options.map(opt => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
+        return (
+          <div key={field.key} className="space-y-2">
+            <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              Correct answer
+            </label>
 
-  case "radio":
-  if (step.settings.mode !== "quiz") return null;
+            <div className="space-y-2">
+              {(step.settings.options || []).map((opt, index) => {
+                const option =
+                  typeof opt === "string"
+                    ? { label: opt, image: "" }
+                    : opt;
 
-  return (
-    <div className="mt-4" key={field.key}>
-      <label className="text-sm font-semibold">
-        Correct Answer
-      </label>
+                return (
+                  <label
+                    key={index}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer
+                      ${
+                        value === index
+                          ? "border-green-500 bg-green-50"
+                          : "border-gray-200 hover:border-blue-400"
+                      }
+                    `}
+                  >
+                    <input
+                      type="radio"
+                      checked={value === index}
+                      onChange={() => change(field.key, index)}
+                    />
+                    <span className="text-sm">
+                      {option.label}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        );
 
-      <div className="mt-2 space-y-2">
-        {(step.settings.options || []).map((opt, index) => (
-          <label
-            key={index}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <input
-              type="radio"
-              checked={value === index}
-              onChange={() => change(field.key, index)}
-            />
-            <span>{opt}</span>
-          </label>
-        ))}
-      </div>
-    </div>
-  );
-
-
-      /* -------------------
-         RICH TEXT
-      ------------------- */
+      /* ---------------- RICH TEXT ---------------- */
       case "richtext":
         return (
-          <div className="mt-3" key={field.key}>
-            <label className="text-sm font-medium">{field.label}</label>
+          <div key={field.key} className="space-y-2">
+            <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              {field.label}
+            </label>
 
-            <div className="flex gap-2 bg-gray-100 border border-gray-200 p-2 mt-1">
+            <div className="flex gap-2 p-2 bg-white border rounded-xl">
               <button onClick={() => document.execCommand("bold")}>
                 <Bold className="w-4 h-4" />
               </button>
@@ -163,7 +247,8 @@ export default function SettingsPanel({ step, updateSettings }) {
               <button
                 onClick={() => {
                   const url = prompt("Enter URL");
-                  if (url) document.execCommand("createLink", false, url);
+                  if (url)
+                    document.execCommand("createLink", false, url);
                 }}
               >
                 <Link className="w-4 h-4" />
@@ -173,7 +258,7 @@ export default function SettingsPanel({ step, updateSettings }) {
             <div
               ref={editorRef}
               contentEditable
-              className="w-full h-24 bg-white border-gray-200 border p-2 rounded mt-1"
+              className="min-h-[90px] px-4 py-3 rounded-xl border bg-white text-sm"
               dangerouslySetInnerHTML={{ __html: value }}
               onInput={(e) =>
                 change(field.key, e.currentTarget.innerHTML)
@@ -182,30 +267,28 @@ export default function SettingsPanel({ step, updateSettings }) {
           </div>
         );
 
-      /* ------------------------------------------------------
-              CONTACT FIELDS (USED IN MultiSection / ContactForm)
-      ------------------------------------------------------- */
+      /* ---------------- CONTACT FIELDS ---------------- */
       case "contact-fields":
         return (
-          <div className="mt-5 space-y-3" key={field.key}>
-            <h3 className="text-sm font-semibold text-gray-700">
-              Form Fields
-            </h3>
+          <div key={field.key} className="space-y-3">
+            <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              Form fields
+            </label>
 
             {step.settings.fields.map((f, index) => {
-              const isOpen = expandedField === index;
+              const open = expandedField === index;
 
               return (
                 <div
                   key={index}
-                  className="border rounded-lg overflow-hidden group"
+                  className="rounded-xl border bg-white overflow-hidden"
                 >
-                  {/* Row Header */}
-                  <div className="flex justify-between p-3 bg-gray-50">
-                    <div className="font-medium text-sm">{f.label}</div>
+                  <div className="flex justify-between items-center p-3 bg-gray-100">
+                    <span className="text-sm font-medium">
+                      {f.label}
+                    </span>
 
                     <div className="flex gap-2">
-                      {/* Hide */}  
                       <button
                         onClick={() => {
                           const arr = [...step.settings.fields];
@@ -220,20 +303,18 @@ export default function SettingsPanel({ step, updateSettings }) {
                         )}
                       </button>
 
-                      {/* Expand Settings */}
                       <button
                         onClick={() =>
-                          setExpandedField(isOpen ? null : index)
+                          setExpandedField(open ? null : index)
                         }
                       >
-                        {isOpen ? (
-                          <ChevronUp className="w-4 h-4" />
-                        ) : (
-                          <Settings className="w-4 h-4" />
-                        )}
+                        <ChevronUp
+                          className={`w-4 h-4 transition ${
+                            open ? "" : "rotate-180"
+                          }`}
+                        />
                       </button>
 
-                      {/* Delete */}
                       <button
                         onClick={() => {
                           const arr = [...step.settings.fields];
@@ -241,49 +322,36 @@ export default function SettingsPanel({ step, updateSettings }) {
                           change("fields", arr);
                         }}
                       >
-                        <Trash2 className="w-4 h-4 text-red-400 opacity-0 group-hover:opacity-100" />
+                        <Trash2 className="w-4 h-4 text-red-400" />
                       </button>
                     </div>
                   </div>
 
-                  {/* Expanded Settings */}
-                  {isOpen && (
-                    <div className="p-3 space-y-3 bg-white border-t">
-                      {/* Field Label */}
-                      <div>
-                        <label className="text-xs text-gray-600">
-                          Label
-                        </label>
-                        <input
-                          className="w-full p-2 border rounded"
-                          value={f.label}
-                          onChange={(e) => {
-                            const arr = [...step.settings.fields];
-                            arr[index].label = e.target.value;
-                            change("fields", arr);
-                          }}
-                        />
-                      </div>
+                  {open && (
+                    <div className="p-4 space-y-3">
+                      <input
+                        value={f.label}
+                        onChange={(e) => {
+                          const arr = [...step.settings.fields];
+                          arr[index].label = e.target.value;
+                          change("fields", arr);
+                        }}
+                        className="w-full px-3 py-2 rounded-lg border"
+                      />
 
-                      {/* Placeholder */}
-                      <div>
-                        <label className="text-xs text-gray-600">
-                          Placeholder
-                        </label>
-                        <input
-                          className="w-full p-2 border rounded"
-                          value={f.placeholder || ""}
-                          onChange={(e) => {
-                            const arr = [...step.settings.fields];
-                            arr[index].placeholder = e.target.value;
-                            change("fields", arr);
-                          }}
-                        />
-                      </div>
+                      <input
+                        value={f.placeholder || ""}
+                        placeholder="Placeholder"
+                        onChange={(e) => {
+                          const arr = [...step.settings.fields];
+                          arr[index].placeholder = e.target.value;
+                          change("fields", arr);
+                        }}
+                        className="w-full px-3 py-2 rounded-lg border"
+                      />
 
-                      {/* Required Toggle */}
-                      <div className="flex justify-between p-2 bg-gray-50 rounded">
-                        <span className="text-sm">Required</span>
+                      <div className="flex justify-between text-sm">
+                        Required
                         <input
                           type="checkbox"
                           checked={f.required}
@@ -300,10 +368,9 @@ export default function SettingsPanel({ step, updateSettings }) {
               );
             })}
 
-            {/* Add Field */}
             <button
-              className="w-full border-2 border-dashed p-3 rounded-lg text-sm text-gray-600 hover:border-blue-400 hover:text-blue-600"
-              onClick={() => {
+              className="w-full border-2 border-dashed rounded-xl py-3 text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600"
+              onClick={() =>
                 change("fields", [
                   ...step.settings.fields,
                   {
@@ -314,10 +381,10 @@ export default function SettingsPanel({ step, updateSettings }) {
                     required: false,
                     hidden: false
                   }
-                ]);
-              }}
+                ])
+              }
             >
-              + Add New Field
+              + Add field
             </button>
           </div>
         );
@@ -327,9 +394,17 @@ export default function SettingsPanel({ step, updateSettings }) {
     }
   };
 
+  /* ===================================================== */
+
   return (
-    <div className="space-y-3">
-      {meta.settingsFields.map((f) => renderField(f))}
+    <div className="bg-gray-50 rounded-2xl p-5 space-y-6">
+      <div className="text-xs font-semibold text-gray-500 tracking-widest uppercase">
+        Question settings
+      </div>
+
+      <div className="space-y-5">
+        {meta.settingsFields.map((f) => renderField(f))}
+      </div>
     </div>
   );
 }

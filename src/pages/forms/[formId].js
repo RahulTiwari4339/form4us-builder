@@ -292,6 +292,12 @@ export default function FormPage() {
     form.steps.slice(0, currentStepIndex).filter((s) => s.type !== "thankyou").length + 1;
   const progressPercentage = ((currentQuestionNumber - 1) / Math.max(totalSteps - 1, 1)) * 100;
 
+  // ✅ CHECK IF FORM HAS QUIZ
+const hasQuiz = form.steps.some(
+  (step) => step.type === "select" && step.settings?.mode === "quiz"
+);
+
+
   return (
     <div
       className={`relative w-full min-h-screen flex flex-col ${
@@ -360,44 +366,59 @@ export default function FormPage() {
     </div>
 
     <div className="space-y-3">
-      {currentStep.settings.options.map((option, index) => (
-        <button
-          key={index}
-          onClick={() => {
-  const isQuiz = currentStep.settings.mode === "quiz";
+      {currentStep.settings.options.map((opt, index) => {
+        // ✅ Normalize option (string | object)
+        const option =
+          typeof opt === "string"
+            ? { label: opt, image: "" }
+            : opt;
 
-  const overrideAnswer = isQuiz
-    ? {
-        [currentStep.key]: {
-          selectedIndex: index,
-          selectedText: option,
-          correctIndex: currentStep.settings.correctAnswer,
-          isCorrect: index === currentStep.settings.correctAnswer
-        }
-      }
-    : {
-        [currentStep.key]: option
-      };
+        const isSelected =
+          formData[currentStep.key]?.selectedIndex === index ||
+          formData[currentStep.key] === option.label;
 
-  // ✅ DIRECTLY PASS ANSWER
-  handleNext(
-    { preventDefault: () => {} },
-    overrideAnswer
-  );
-}}
+        return (
+          <button
+            key={index}
+            onClick={() => {
+              const isQuiz = currentStep.settings.mode === "quiz";
 
-          className={`w-full text-left px-6 py-4 rounded-xl border-2 transition-all
-            ${
-              formData[currentStep.key]?.selectedText === option ||
-              formData[currentStep.key] === option
-                ? "border-blue-600 bg-blue-50"
-                : "border-gray-300 bg-white hover:border-blue-400"
-            }
-          `}
-        >
-          <span className="text-xl font-medium">{option}</span>
-        </button>
-      ))}
+              const overrideAnswer = isQuiz
+                ? {
+                    [currentStep.key]: {
+                      selectedIndex: index,
+                      selectedText: option.label,
+                      correctIndex: currentStep.settings.correctAnswer,
+                      isCorrect: index === currentStep.settings.correctAnswer,
+                    },
+                  }
+                : {
+                    [currentStep.key]: option.label,
+                  };
+
+              handleNext({ preventDefault: () => {} }, overrideAnswer);
+            }}
+            className={`w-full text-left px-6 py-4 rounded-xl border-2 transition-all flex gap-4 items-center
+              ${
+                isSelected
+                  ? "border-blue-600 bg-blue-50"
+                  : "border-gray-300 bg-white hover:border-blue-400"
+              }`}
+          >
+            {/* 🖼 Option Image */}
+            {option.image && (
+              <img
+                src={option.image}
+                alt={option.label}
+                className="w-14 h-14 object-cover rounded-lg border"
+              />
+            )}
+
+            {/* 📝 Option Label */}
+            <span className="text-xl font-medium">{option.label}</span>
+          </button>
+        );
+      })}
     </div>
   </div>
 )}
@@ -835,27 +856,95 @@ export default function FormPage() {
           )}
 
           {/* THANK YOU STEP */}
-          {currentStep?.type === "thankyou" && (
-            <div className="text-center space-y-6 py-12">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
-                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-5xl md:text-6xl font-bold text-gray-900">
-                {currentStep?.settings?.title || "Thank you!"}
-              </h2>
-              <p className="text-xl text-gray-600 max-w-xl mx-auto">
-                {currentStep?.settings?.description || "Your response has been recorded."}
-              </p>
-              <button
-                onClick={() => router.push("/")}
-                className="mt-8 inline-flex items-center px-8 py-4 bg-blue-600 text-white text-lg font-medium rounded-lg hover:bg-blue-700 transition-all hover:scale-105 shadow-lg"
-              >
-                {currentStep?.settings?.buttonText || "Back to Home"}
-              </button>
-            </div>
-          )}
+          {/* THANK YOU STEP */}
+{currentStep?.type === "thankyou" && (
+  <div className="flex flex-col items-center text-center py-16 space-y-8">
+
+    {/* 🎯 SHOW SCORE ONLY IF QUIZ EXISTS */}
+    {hasQuiz && finalScore && (
+      <>
+        {/* SCORE CIRCLE */}
+        <div className="relative w-36 h-36">
+          <svg className="w-full h-full -rotate-90">
+            <circle
+              cx="72"
+              cy="72"
+              r="60"
+              stroke="#E5E7EB"
+              strokeWidth="10"
+              fill="none"
+            />
+            <circle
+              cx="72"
+              cy="72"
+              r="60"
+              stroke={
+                finalScore.percentage >= 80
+                  ? "#22C55E"
+                  : finalScore.percentage >= 60
+                  ? "#3B82F6"
+                  : "#EF4444"
+              }
+              strokeWidth="10"
+              fill="none"
+              strokeDasharray={`${(finalScore.percentage / 100) * 377} 377`}
+              strokeLinecap="round"
+            />
+          </svg>
+
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-3xl font-bold text-gray-900">
+              {finalScore.percentage}%
+            </span>
+            <span className="text-sm text-gray-500">Score</span>
+          </div>
+        </div>
+
+        {/* FEEDBACK */}
+        <div className="space-y-2">
+          <h2 className="text-4xl font-bold text-gray-900">
+            {finalScore.percentage >= 80 && "🎉 Excellent!"}
+            {finalScore.percentage >= 60 &&
+              finalScore.percentage < 80 &&
+              "👍 Good job!"}
+            {finalScore.percentage < 60 && "😕 Keep practicing"}
+          </h2>
+
+          <p className="text-lg text-gray-600">
+            You answered{" "}
+            <span className="font-semibold text-gray-900">
+              {finalScore.correct} out of {finalScore.total}
+            </span>{" "}
+            questions correctly.
+          </p>
+        </div>
+      </>
+    )}
+
+    {/* 🙏 NON-QUIZ MESSAGE */}
+    {!hasQuiz && (
+      <>
+        <h2 className="text-4xl font-bold text-gray-900">
+          🎉 Thanks for submitting!
+        </h2>
+        <p className="text-lg text-gray-600 max-w-md">
+          Your response has been recorded successfully.
+        </p>
+      </>
+    )}
+
+    {/* CTA BUTTON */}
+    <button
+      onClick={() => window.open("https://www.form4us.com/", "_blank")}
+      className="mt-6 px-10 py-4 rounded-xl bg-blue-600 text-white text-lg font-semibold
+                 hover:bg-blue-700 transition transform hover:scale-105 shadow-lg"
+    >
+      Create your form on Form4Us →
+    </button>
+  </div>
+)}
+
+
         </div>
       </div>
 

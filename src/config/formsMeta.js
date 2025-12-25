@@ -66,9 +66,12 @@ select: {
   default: {
     title: "Question?",
     description: "",
-    options: ["Option 1", "Option 2", "Option 3", "Option 4"],
-    mode: "select", // 👈 NEW ("select" | "quiz")
-    correctAnswer: null // 👈 index (number)
+    options: [
+    { label: "Option 1", image: "" },
+    { label: "Option 2", image: "" }
+  ],
+    mode: "select", 
+    correctAnswer: null
   },
   settingsFields: [
     { key: "title", type: "text", label: "Title" },
@@ -93,8 +96,7 @@ select: {
 
     { key: "nextText", type: "text", label: "Next Button Text" }
   ]
-}
-,
+},
   longText: {
     label: "Long Text",
     icon: "AlignLeft",
